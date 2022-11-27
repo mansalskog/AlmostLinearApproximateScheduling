@@ -1,0 +1,6 @@
+[deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DoubleFloats = "497a8b3b-efae-58df-a0af-a86822472b78"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+LinkCutTrees = "9b2c3604-c02d-4033-9e75-a81d4d4fb586"
