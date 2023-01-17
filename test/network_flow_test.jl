@@ -12,7 +12,7 @@ include("../src/tolerances.jl")
     n = 6
     edges = [(1,2), (1,3), (2,3), (2,4), (2,5), (3,5), (5,4), (4,6), (5,6)]
     capacities = [10, 10, 2, 4, 8, 9, 6, 10, 10]
-    G = Graph(n, edges)
+    G = Graph{Set{Int}}(n, edges)
     s = 1
     t = 6
     flow = find_blocking_flow(G, capacities, s, t)
@@ -31,7 +31,7 @@ end
         (7,2),
         (8,7),
     ]
-    G = Graph(8, es)
+    G = Graph{Vector{Int}}(8, es)
     a = [0,0,0,0,5,0,0,5,0,0]
     b = [5,5,0,0,0,0,0,0,0,0]
     S = [v for v in 1:G.n if a[v] > 0]

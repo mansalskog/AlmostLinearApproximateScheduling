@@ -2,7 +2,7 @@
 function mwu_solve_lp(
     a::Vector{R},
     P::Matrix{R},
-    G::Graph,
+    G::Graph{Vector{Int}},
     ϵ::R,
     ϕ::R)::Vector{R} where R<:Real
     @assert 0 < ϵ < 1
@@ -40,7 +40,7 @@ function mwu_solve_lp(
     x
 end
 
-function validate_oracle_solution(b::Vector{R}, G::Graph, y::Vector{R}, ϵ::R) where R<:Real
+function validate_oracle_solution(b::Vector{R}, G::Graph{Vector{Int}}, y::Vector{R}, ϵ::R) where R<:Real
     @assert b'*y <= 1 + ϵ + EXPRESSION_TOL
     # NB. Here we have no numerical problems because of the postprocessing step
     @assert all(0 <= yi <= 1 for yi in y)
@@ -50,7 +50,7 @@ end
 function oracle_solve_lp(
     a::Vector{R},
     b::Vector{R},
-    G::Graph,
+    G::Graph{Vector{Int}},
     ϵ::R,
     ϕ::R)::Vector{R} where R<:Real
     @assert 0 < ϵ < 1
@@ -105,7 +105,7 @@ function oracle_solve_lp(
 end
 
 function validate_S′_and_f(
-    G::Graph,
+    G::Graph{Vector{Int}},
     a::Vector{R},
     b::Vector{R},
     S::Vector{Int},
@@ -125,7 +125,7 @@ function validate_S′_and_f(
     @assert sum(a[S_diff]) + γ * sum(b[TS′]) / (1+ϵ) <= val_f + ϕ/3 + EXPRESSION_TOL
 end
 
-function y_from_nfp_gamma(G::Graph, ã::Vector{R}, b̃::Vector{R}, S′_list::Vector{Vector{Int}}, ϵ::R)::Vector{R} where {R<:Real}
+function y_from_nfp_gamma(G::Graph{Vector{Int}}, ã::Vector{R}, b̃::Vector{R}, S′_list::Vector{Vector{Int}}, ϵ::R)::Vector{R} where {R<:Real}
     Γ_length = length(S′_list)
 
     # solve using our own LP solver
@@ -148,7 +148,7 @@ end
 "transform the output according to the last part of Lemma 3.8"
 function postprocess_y(
     y::Vector{R},
-    G::Graph,
+    G::Graph{Vector{Int}},
     a::Vector{R},
     b::Vector{R})::Vector{R} where R<:Real
 
@@ -176,10 +176,10 @@ end
 function transform_data(
     a::Vector{R},
     b::Vector{R},
-    G::Graph)::Tuple{
+    G::Graph{Vector{Int}})::Tuple{
         Vector{R},
         Vector{R},
-        Graph,
+        Graph{Vector{Int}},
         Vector{Int},
         Vector{Int},
         Vector{Union{Nothing,Int}},
@@ -245,7 +245,7 @@ function transform_data(
         push!(new_edges, (new_v[t],t′))
     end
 
-    new_G = Graph(new_n, new_edges)
+    new_G = Graph{Vector{Int}}(new_n, new_edges)
     # these could also be created by pushing each s′ and t′, resp. (see above)
     new_S = [s for s in 1:new_n if new_a[s] > 0]
     new_T = [t for t in 1:new_n if new_b[t] > 0]
@@ -257,7 +257,7 @@ end
 function validate_transformed(
     a::Vector{R},
     b::Vector{R},
-    G::Graph,
+    G::Graph{Vector{Int}},
     S::Vector{Int},
     T::Vector{Int}) where R<:Real
 

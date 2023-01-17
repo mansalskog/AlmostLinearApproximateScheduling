@@ -24,7 +24,7 @@ function warn_if_negative(x::R) where R<:Real
 end
 
 "find f and S′ satisfying properties of Theorem 3.10, as in algorithm 4 in the paper"
-function find_S′_and_f(G::Graph, a::Vector{R}, b::Vector{R}, S::Vector{Int}, T::Vector{Int}, γ::R, ϵ::R, ϕ::R) where R<:Real
+function find_S′_and_f(G::Graph{Vector{Int}}, a::Vector{R}, b::Vector{R}, S::Vector{Int}, T::Vector{Int}, γ::R, ϵ::R, ϕ::R) where R<:Real
     Gl = G
     πl = collect(1:G.n) # Identity mapping of vertices
     π_edgel = collect(1:G.m) # Identity mapping of edges
@@ -58,8 +58,8 @@ end
 
 "perform the function called inc-len in the paper"
 function inc_len(
-    l::Int, G::Graph,
-    G°::Graph, π°::Vector{Int}, π°_edge::Vector{Int},
+    l::Int, G::Graph{Vector{Int}},
+    G°::Graph{Vector{Int}}, π°::Vector{Int}, π°_edge::Vector{Int},
     a::Vector{R}, b::Vector{R}, S::Vector{Int}, T::Vector{Int},
     γ::R, f°::Vector{R}, ρ::Vector{Int}) where R<:Real
     (Si,Ti) = find_Si_and_Ti(l-1, G°, a, S, T, f°)
@@ -149,7 +149,7 @@ end
 the subgraph copies G^{i,-} represented by adj_Gi_minus"
 function construct_G′(
     l::Int,
-    G::Graph,
+    G::Graph{Vector{Int}},
     a::Vector{R},
     b::Vector{R},
     adj_Gi_minus::Vector{Vector{Tuple{Int,Vector{Int}}}}) where R<:Real
@@ -184,14 +184,14 @@ function construct_G′(
             end
         end
     end
-    G′ = Graph(n′, G′_edges)
+    G′ = Graph{Vector{Int}}(n′, G′_edges)
     (G′,π′,π′_edge,π′_edge_inv)
 end
 
 function construct_R_graph(
     l::Int,
-    G::Graph,
-    G′::Graph,
+    G::Graph{Vector{Int}},
+    G′::Graph{Vector{Int}},
     f′::Vector{R},
     a::Vector{R},
     b::Vector{R},
@@ -258,7 +258,7 @@ function construct_R_graph(
         end
     end
 
-    R_graph = Graph(G′.n+2, R_edges)
+    R_graph = Graph{Set{Int}}(G′.n+2, R_edges)
     (R_graph,C,edge_in_R_graph,s_star,t_star)
 end
 
@@ -282,7 +282,7 @@ function sum_of_subflows(
     f′
 end
 
-function general_bfs_fwd(G::Graph, S::Vector{Int}, visited::BitVector, action::Function, pred::Union{Function,Nothing}=nothing)
+function general_bfs_fwd(G::Graph{Vector{Int}}, S::Vector{Int}, visited::BitVector, action::Function, pred::Union{Function,Nothing}=nothing)
     Q = Queue{Int}()
     for s in S
         enqueue!(Q, s)
@@ -299,7 +299,7 @@ function general_bfs_fwd(G::Graph, S::Vector{Int}, visited::BitVector, action::F
     end
 end
 
-function general_bfs_bwd(G::Graph, T::Vector{Int}, visited::BitVector, action::Function, pred::Union{Function,Nothing}=nothing)
+function general_bfs_bwd(G::Graph{Vector{Int}}, T::Vector{Int}, visited::BitVector, action::Function, pred::Union{Function,Nothing}=nothing)
     Q = Queue{Int}()
     for t in T
         enqueue!(Q, t)
@@ -318,7 +318,7 @@ end
 
 "find the sets V(G^{i,+}) and V(G^{i,-}) by first finding the smallest i such that Si[i] -> v, for each v,
 and then performing BFS backwards from Ti (and Si)"
-function find_Gi(G::Graph, Si::Vector{Vector{Int}}, Ti::Vector{Vector{Int}}, l::Int)
+function find_Gi(G::Graph{Vector{Int}}, Si::Vector{Vector{Int}}, Ti::Vector{Vector{Int}}, l::Int)
     visited = falses(G.n)
     min_i = fill(-1, G.n)
     for i in 1:l+1
@@ -383,38 +383,12 @@ function find_Gi(G::Graph, Si::Vector{Vector{Int}}, Ti::Vector{Vector{Int}}, l::
     @assert all(length(handles_Gi_plus[v]) <= 3 for v in 1:G.n) "Observation D.17 should hold"
     @assert all(length(handles_Gi_minus[v]) <= 3 for v in 1:G.n) "Observation D.17 should hold"
 
-    # create adjacency lists from V(G^{i,+}) etc.
-    adj_Gi_plus = Vector{Tuple{Int,Vector{Int}}}[]
-    for i in 1:l+1
-        push!(adj_Gi_plus, Tuple{Int,Vector{Int}}[])
-        for v in V_Gi_plus[i]
-            push!(adj_Gi_plus[i],
-                (v,[e for e in δ_out(G, v) if i in handles_Gi_plus[dst_vertex(G, e)]]))
-        end
-    end
-
-    adj_Gi_minus = Vector{Tuple{Int,Vector{Int}}}[]
-    for i in 1:l
-        push!(adj_Gi_minus, Tuple{Int,Vector{Int}}[])
-        for v in V_Gi_minus[i]
-            push!(adj_Gi_minus[i],
-                (v,[e for e in δ_out(G, v) if i in handles_Gi_minus[dst_vertex(G, e)]]))
-        end
-    end
-
-    # Simpler method of creating adj. list of creating adj. lists:
-    #=
-     adj_Gi_plus = [
-        [(v,[e for e in δ_out(G, v) if i in handles_Gi_plus[dst_vertex(G, e)]) for v in V_Gi_plus[i]]
-        [(v,[e for e in δ_out(G, v) if i in handles_Gi_plus[dst_vertex(G, e)]]) for v in V_Gi_plus[i]]
-         for i=1:l+1
-     ]
-     adj_Gi_minus = [
-        [(v,[e for e in δ_out(G, v) if i in handles_Gi_minus[dst_vertex(G, e)]) for v in V_Gi_minus[i]]
-        [(v,[e for e in δ_out(G, v) if i in handles_Gi_minus[dst_vertex(G, e)]]) for v in V_Gi_minus[i]]
-         for i=1:l
-     ]
-    =#
+    adj_Gi_plus = [
+        [(v,[e for e in δ_out(G, v) if i in handles_Gi_plus[dst_vertex(G, e)]]) for v in V_Gi_plus[i]] for i=1:l+1
+    ]
+    adj_Gi_minus = [
+        [(v,[e for e in δ_out(G, v) if i in handles_Gi_minus[dst_vertex(G, e)]]) for v in V_Gi_minus[i]] for i=1:l
+    ]
 
     (adj_Gi_plus,adj_Gi_minus)
 end
@@ -425,7 +399,7 @@ G′ is a handled graph representing the shortcut graph H
 Note that Si[i] corresponds to S^{i-1} in the paper"
 function find_Si_and_Ti(
     L::Int,
-    G′::Graph,
+    G′::Graph{Vector{Int}},
     a::Vector{R},
     S::Vector{Int},
     T::Vector{Int},
@@ -464,7 +438,7 @@ function find_Si_and_Ti(
     (Si,Ti)
 end
 
-function find_distance_from_S_and_T(L::Int, G′::Graph, a::Vector{R}, S::Vector{Int}, T::Vector{Int}, f′::Vector{R}) where R<:Real
+function find_distance_from_S_and_T(L::Int, G′::Graph{Vector{Int}}, a::Vector{R}, S::Vector{Int}, T::Vector{Int}, f′::Vector{R}) where R<:Real
     N = G′.n
 
     # We want the edges which are common to G′ and F to have the same index
@@ -492,7 +466,7 @@ function find_distance_from_S_and_T(L::Int, G′::Graph, a::Vector{R}, S::Vector
         push!(F_edges, (t,N+t))
         push!(weight, 1)
     end
-    F = Graph(2*N, F_edges)
+    F = Graph{Vector{Int}}(2*N, F_edges)
 
     # construct S[1], ..., S[L+2] and T[1], ..., T[L+2]
     q0 = Queue{Int}()
@@ -530,7 +504,7 @@ end
 
 "find S′ according to Lemma D.6"
 function find_S′(
-    G′::Graph,
+    G′::Graph{Vector{Int}},
     f′::Vector{R},
     a::Vector{R},
     b::Vector{R},
@@ -562,7 +536,7 @@ end
 Returns the flow as a list of Tuples (edge,flow).
 Assumes that c is an all-zero verctor of length G.n"
 function find_flow_from_S(
-    G′::Graph,
+    G′::Graph{Vector{Int}},
     π′::Vector{Int},
     f′::Vector{R},
     supp_out::Vector{Vector{Int}},
@@ -618,7 +592,7 @@ end
 Returns the flow as a list of Tuples (edge,flow).
 Assumes that c is an all-zero verctor of length G.n"
 function find_flow_to_T(
-    G′::Graph,
+    G′::Graph{Vector{Int}},
     π′::Vector{Int},
     f′::Vector{R},
     supp_inc::Vector{Vector{Int}},

@@ -3,7 +3,7 @@ using LinkCutTrees: parent
 
 "find a blocking flow using the algorithm from Sleator and Tarjan, p. 388,
 in the graph G from the source s_star and the sink t_star"
-function find_blocking_flow(G::Graph, capacity::Vector{R}, s_star::Int, t_star::Int)::Vector{R} where R<:Real
+function find_blocking_flow(G::Graph{Set{Int}}, capacity::Vector{R}, s_star::Int, t_star::Int)::Vector{R} where R<:Real
     @assert 1 <= s_star <= G.n "s_star must be a vertex"
     @assert 1 <= t_star <= G.n "t_star must be a vertex"
     trees = [make_tree(Int, Int, R, v) for v in 1:G.n]

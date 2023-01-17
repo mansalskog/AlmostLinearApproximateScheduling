@@ -4,7 +4,7 @@ const VALIDATE_SOLUTION = false
 const VALIDATE_TRANSFORMED = false
 
 "Compute the total processing times for precedence chains ending at each job."
-function longest_prec_chains(inst::Instance, prec_graph::Graph, prec_order::Vector{Int})::Vector{Int}
+function longest_prec_chains(inst::Instance, prec_graph::Graph{Vector{Int}}, prec_order::Vector{Int})::Vector{Int}
     q = zeros(Int, inst.n)
     for v in prec_order
         q′ = inst.p[v] + maximum(q[u] for u in Δ_inc(prec_graph, v); init=0)
@@ -56,7 +56,7 @@ function call_mwu_solver(
             push!(E, (x_to_v[j2,d],x_to_v[j1,d]))
         end
     end
-    G = Graph(N̂, E)
+    G = Graph{Vector{Int}}(N̂, E)
 
     P = zeros(R, D+1, N̂)
     for v in 1:N̂
@@ -141,7 +141,7 @@ end
 
 "Find a solution for an instance."
 function solve_instance(inst::Instance, ϵ::Real)::Solution
-    prec_graph = Graph(inst.n, inst.prec)
+    prec_graph = Graph{Vector{Int}}(inst.n, inst.prec)
     prec_order = topological_ordering(prec_graph)
 
     q = longest_prec_chains(inst, prec_graph, prec_order)

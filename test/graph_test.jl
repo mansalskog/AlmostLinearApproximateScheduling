@@ -10,31 +10,42 @@ include("../src/graph.jl")
         (6,1), (6,2),
         (7,2),
     ]
-    dag = Graph(7, es)
-    @test dag.n == 7
-    
-    # check that ordering of edges is preserved (in some sense)
-    @test collect(enumerate(es)) == sort([(e,(src_vertex(dag, e),dst_vertex(dag, e))) for e in edges(dag)], by=first)
 
-    @test sort(Δ_out(dag, 4)) == [3, 6, 7]
-    @test sort(collect(δ_out(dag, 4))) == [2, 3, 4]
-    @test sort(reach_from(dag, [4])) == [1, 2, 3, 4, 6, 7]
+    function check_dag(dag)
+        @test dag.n == 7
+        
+        # check that ordering of edges is preserved (in some sense)
+        @test collect(enumerate(es)) == sort([(e,(src_vertex(dag, e),dst_vertex(dag, e))) for e in edges(dag)], by=first)
 
-    @test sort(Δ_inc(dag, 2)) == [3, 6, 7]
-    @test sort(collect(δ_inc(dag, 2))) == [1, 8, 9]
-    @test sort(reach_to(dag, [2])) == [2, 3, 4, 5, 6, 7]
+        @test sort(Δ_out(dag, 4)) == [3, 6, 7]
+        @test sort(collect(δ_out(dag, 4))) == [2, 3, 4]
+        @test sort(reach_from(dag, [4])) == [1, 2, 3, 4, 6, 7]
 
-    rank = ordering_to_rank(topological_ordering(dag))
-    @test all(rank[v1] < rank[v2] for (v1,v2) in es)
+        @test sort(Δ_inc(dag, 2)) == [3, 6, 7]
+        @test sort(collect(δ_inc(dag, 2))) == [1, 8, 9]
+        @test sort(reach_to(dag, [2])) == [2, 3, 4, 5, 6, 7]
 
-    # remove the edge (4,6)
-    delete_edge!(dag, 3)
+        rank = ordering_to_rank(topological_ordering(dag))
+        @test all(rank[v1] < rank[v2] for (v1,v2) in es)
+    end
 
-    @test sort(Δ_out(dag, 4)) == [3, 7]
-    @test sort(collect(δ_out(dag, 4))) == [2, 4]
-    @test sort(reach_from(dag, [4])) == [2, 3, 4, 7]
+    function check_dag_deletion!(dag)
+        # remove the edge (4,6)
+        delete_edge!(dag, 3)
 
-    @test sort(Δ_inc(dag, 6)) == [5]
-    @test sort(collect(δ_inc(dag, 6))) == [6]
-    @test sort(reach_to(dag, [6])) == [5, 6]
+        @test sort(Δ_out(dag, 4)) == [3, 7]
+        @test sort(collect(δ_out(dag, 4))) == [2, 4]
+        @test sort(reach_from(dag, [4])) == [2, 3, 4, 7]
+
+        @test sort(Δ_inc(dag, 6)) == [5]
+        @test sort(collect(δ_inc(dag, 6))) == [6]
+        @test sort(reach_to(dag, [6])) == [5, 6]
+    end
+
+    g = Graph{Set{Int}}(7, es)
+    check_dag(g)
+    check_dag_deletion!(g)
+
+    g = Graph{Vector{Int}}(7, es)
+    check_dag(g)
 end

@@ -1,9 +1,9 @@
 # TODO: using DataStructures: RBTree
 
 # adjacency list graph representation
-mutable struct Graph
-    out::Vector{Set{Int}}
-    inc::Vector{Set{Int}}
+mutable struct Graph{AdjT}
+    out::Vector{AdjT}
+    inc::Vector{AdjT}
     # TODO
     # out::Vector{RBTree{Int}} # out[v] = [e1,e2,...]
     # inc::Vector{RBTree{Int}} # inc[v] = [e1,e2,...]
@@ -12,12 +12,12 @@ mutable struct Graph
     m::Int # number of edges
 
     "create a graph from a list of edges on the form (v1,v2)"
-    function Graph(n::Int, edges::Vector{Tuple{Int,Int}})::Graph
+    function Graph{AdjT}(n::Int, edges::Vector{Tuple{Int,Int}})::Graph{AdjT} where {AdjT}
         # TODO
         # inc = [RBTree{Int}() for v in 1:n]
         # out = [RBTree{Int}() for v in 1:n]
-        inc = [Set{Int}() for v in 1:n]
-        out = [Set{Int}() for v in 1:n]
+        inc = [AdjT() for v in 1:n]
+        out = [AdjT() for v in 1:n]
         m = length(edges)
         src = zeros(Int, m)
         dst = zeros(Int, m)
